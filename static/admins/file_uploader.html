@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识库更新服务</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        if (typeof Vue === 'undefined') {
+            document.write('<script src="https://unpkg.zhimg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #4f8c6c;
+            --primary-light: #e8f5e9;
+            --primary-dark: #3d6b52;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-secondary: #7f8c9b;
+            --border: #e8ecf1;
+            --success: #52c41a;
+            --error: #ff4d4f;
+            --warning: #faad14;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 2px 16px rgba(0,0,0,0.06);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+                         "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f1 30%, #f5f7fa 70%, #e3f2fd 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: fixed; top: 0; right: 0;
+            padding: 16px 24px;
+            z-index: 100;
+        }
+        .admin-area { position: relative; }
+        .admin-trigger {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            padding: 6px 14px 6px 8px; border-radius: 28px; background: var(--card-bg);
+            border: 1px solid var(--border); transition: var(--transition); user-select: none;
+        }
+        .admin-trigger:hover { border-color: var(--primary); background: var(--primary-light); }
+        .admin-avatar {
+            width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+            background: var(--primary-light); display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .admin-avatar svg { width: 16px; height: 16px; color: var(--primary); }
+        .admin-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .admin-arrow { font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
+        .admin-arrow.open { transform: rotate(180deg); }
+        .admin-dropdown {
+            position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px;
+            background: var(--card-bg); border-radius: var(--radius-sm); box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+            border: 1px solid var(--border); overflow: hidden; z-index: 10; animation: fadeIn 0.2s ease;
+        }
+        .admin-dropdown-item {
+            display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+            font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; transition: background 0.15s;
+        }
+        .admin-dropdown-item:hover { background: var(--primary-light); }
+        .admin-dropdown-item.logout { color: var(--error); border-top: 1px solid var(--border); }
+        .admin-dropdown-item.logout:hover { background: #fff2f0; }
+        .admin-dropdown-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .header .logo {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #4f8c6c 0%, #66bb6a 100%);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(79,140,108,0.25);
+        }
+        .header .logo svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 36px 32px;
+            border: 1px solid var(--border);
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed #d0dbe0;
+            border-radius: var(--radius);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fafbfc;
+            position: relative;
+        }
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-zone .upload-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .upload-zone .upload-icon svg {
+            width: 26px;
+            height: 26px;
+            color: var(--primary);
+        }
+        .upload-zone h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .upload-zone .hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .upload-zone .hint span {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Format Tags */
+        .format-tags {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 8px 12px;
+            justify-content: center;
+            margin-top: 18px;
+        }
+        .format-tag {
+            font-size: 12px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: #f0f4f1;
+            color: #4f8c6c;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* File List */
+        .file-list {
+            margin-top: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: #fafbfc;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            gap: 12px;
+            transition: var(--transition);
+        }
+        .file-item .file-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .file-icon.txt  { background: #e3f2fd; color: #1976d2; }
+        .file-icon.pdf  { background: #fce4ec; color: #d32f2f; }
+        .file-icon.docx { background: #e8f5e9; color: #388e3c; }
+        .file-icon.xlsx { background: #fff3e0; color: #f57c00; }
+        .file-icon.pptx { background: #e8eaf6; color: #5c6bc0; }
+        .file-icon.md   { background: #f3e5f5; color: #7b1fa2; }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-info .name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-info .meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .file-item .remove-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #bbb;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .file-item .remove-btn:hover {
+            background: #fee;
+            color: var(--error);
+        }
+
+        /* Upload Actions */
+        .upload-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .upload-actions .btn-upload {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        /* Upload Button */
+        .btn-upload {
+            width: 100%;
+            margin-top: 20px;
+            padding: 13px 0;
+            background: linear-gradient(135deg, #4f8c6c 0%, #43a047 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 14px rgba(79,140,108,0.3);
+        }
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(79,140,108,0.4);
+        }
+        .btn-upload:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Stop Button */
+        .btn-stop {
+            padding: 13px 20px;
+            background: #fff;
+            color: var(--error);
+            border: 1px solid var(--error);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .btn-stop:hover {
+            background: #fff2f0;
+        }
+
+        /* Progress Bar */
+        .progress-wrap {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e8ecf1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f8c6c, #66bb6a);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Status Alert */
+        .alert {
+            margin-top: 16px;
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .alert-success {
+            background: #f0fff0;
+            color: #389e0d;
+            border: 1px solid #b7eb8f;
+        }
+        .alert-error {
+            background: #fff2f0;
+            color: #cf1322;
+            border: 1px solid #ffccc7;
+        }
+        .alert-info {
+            background: #e6f7ff;
+            color: #096dd9;
+            border: 1px solid #91d5ff;
+        }
+
+        /* Uploaded list */
+        .uploaded-list {
+            margin-top: 24px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .uploaded-list h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        .uploaded-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .uploaded-item:last-child {
+            border-bottom: none;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-dot.success { background: var(--success); }
+        .status-dot.skip   { background: var(--warning); }
+
+        /* Document Management */
+        .doc-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .doc-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .doc-section-header h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .btn-refresh {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .btn-refresh:hover:not(:disabled) {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-clear-all {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--error);
+            background: var(--card-bg);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--error);
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .btn-clear-all:hover:not(:disabled) {
+            background: #fff2f0;
+        }
+        .btn-clear-all:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .doc-list-scroll {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        .doc-item:hover { background: #fafbfc; }
+        .doc-item .doc-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .doc-icon.txt  { background: #e3f2fd; color: #1976d2; }
+        .doc-icon.pdf  { background: #fce4ec; color: #d32f2f; }
+        .doc-icon.docx { background: #e8f5e9; color: #388e3c; }
+        .doc-icon.xlsx { background: #fff3e0; color: #f57c00; }
+        .doc-icon.pptx { background: #e8eaf6; color: #5c6bc0; }
+        .doc-icon.md   { background: #f3e5f5; color: #7b1fa2; }
+        .doc-item .doc-name {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .btn-delete-doc {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #bbb;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .btn-delete-doc:hover {
+            background: #fee;
+            color: var(--error);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        .file-list::-webkit-scrollbar,
+        .uploaded-list::-webkit-scrollbar,
+        .doc-list-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .file-list::-webkit-scrollbar-thumb,
+        .uploaded-list::-webkit-scrollbar-thumb,
+        .doc-list-scroll::-webkit-scrollbar-thumb {
+            background: #d0d5dd;
+            border-radius: 4px;
+        }
+        .file-list::-webkit-scrollbar-thumb:hover,
+        .uploaded-list::-webkit-scrollbar-thumb:hover,
+        .doc-list-scroll::-webkit-scrollbar-thumb:hover {
+            background: #b0b8c4;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- Admin Top Bar -->
+    <div class="topbar" v-if="admin.username">
+        <div class="admin-area">
+                <div class="admin-trigger" @click="toggleAdminDropdown">
+                    <div class="admin-avatar">
+                        <img v-if="admin.avatar" :src="admin.avatar" alt="">
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <span class="admin-name">{{ admin.username }}</span>
+                    <span class="admin-arrow" :class="{ open: showAdminDropdown }">▼</span>
+                </div>
+                <div class="admin-dropdown" v-if="showAdminDropdown" @click.stop>
+                    <div class="admin-dropdown-item" @click="goToAdminCenter">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        进入管理员中心
+                    </div>
+                    <div class="admin-dropdown-item logout" @click="handleLogout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        退出登录
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h8v2H8v-2zm0 4h8v2H8v-2zm0-8h3v2H8V9z"/></svg>
+            </div>
+            <h1>知识库更新服务</h1>
+            <p>上传文档，自动解析并存入知识库</p>
+        </div>
+
+        <div class="card">
+            <!-- Upload Zone -->
+            <div class="upload-zone"
+                 :class="{ dragover: isDragover }"
+                 @click="triggerFileInput"
+                 @dragover.prevent="isDragover = true"
+                 @dragleave.prevent="isDragover = false"
+                 @drop.prevent="handleDrop">
+                <div class="upload-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <h3>点击或拖拽文件到此区域上传</h3>
+                <p class="hint">支持 <span>txt</span> · <span>pdf</span> · <span>docx</span> · <span>xlsx</span> · <span>pptx</span> · <span>md</span> 格式文件</p>
+                <div class="format-tags">
+                    <span class="format-tag">📄 TXT</span>
+                    <span class="format-tag">📕 PDF</span>
+                    <span class="format-tag">📝 DOCX</span>
+                    <span class="format-tag">📊 XLSX</span>
+                    <span class="format-tag">📽️ PPTX</span>
+                    <span class="format-tag">📋 MD</span>
+                </div>
+            </div>
+
+            <input type="file" ref="fileInput" style="display:none" multiple
+                   accept=".txt,.pdf,.docx,.xlsx,.pptx,.md"
+                   @change="handleFileSelect">
+
+            <!-- Selected Files -->
+            <div class="file-list" v-if="files.length > 0">
+                <div class="file-item" v-for="(file, index) in files" :key="index">
+                    <div class="file-icon" :class="file.ext">
+                        {{ file.ext.toUpperCase() }}
+                    </div>
+                    <div class="file-info">
+                        <div class="name">{{ file.name }}</div>
+                        <div class="meta">{{ formatSize(file.size) }}</div>
+                    </div>
+                    <button class="remove-btn" @click.stop="removeFile(index)" title="移除">×</button>
+                </div>
+            </div>
+
+            <!-- Upload Button -->
+            <div class="upload-actions">
+                <button class="btn-upload"
+                        :disabled="files.length === 0 || uploading"
+                        @click="uploadFiles">
+                    <span v-if="uploading">
+                        <span class="spinner"></span> 上传中...
+                    </span>
+                    <span v-else>上传到知识库</span>
+                </button>
+                <button class="btn-stop" v-if="uploading" @click="cancelUpload">
+                    停止上传
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-wrap" v-if="uploading">
+                <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: (uploadTotal > 0 ? (uploadProcessed / uploadTotal * 100) : 0) + '%' }"></div>
+                </div>
+                <span class="progress-text">{{ uploadProcessed }} / {{ uploadTotal }}</span>
+            </div>
+
+            <!-- Status Alert -->
+            <div v-if="statusMsg" :class="['alert', 'alert-' + statusType]">
+                <span v-if="statusType === 'success'">✓</span>
+                <span v-else-if="statusType === 'error'">✗</span>
+                <span v-else>ℹ</span>
+                {{ statusMsg }}
+            </div>
+
+            <!-- Knowledge Base Documents -->
+            <div class="doc-section" v-if="documents.length > 0 || loadingDocs">
+                <div class="doc-section-header">
+                    <h4>知识库文档 ({{ documents.length }})</h4>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-clear-all" @click="clearAllDocuments" :disabled="clearingAll" title="一键清空所有知识库文档">
+                            <span v-if="clearingAll">清空中...</span>
+                            <span v-else>一键清空</span>
+                        </button>
+                        <button class="btn-refresh" @click="loadDocuments" :disabled="loadingDocs" title="刷新列表">↻</button>
+                    </div>
+                </div>
+                <div class="doc-list-scroll">
+                    <div v-if="loadingDocs" style="color:#999;font-size:13px;text-align:center;padding:12px;">加载中...</div>
+                    <div class="doc-item" v-for="doc in documents" :key="doc">
+                        <span class="doc-icon" :class="doc.split('.').pop().toLowerCase()">{{ doc.split('.').pop().toUpperCase() }}</span>
+                        <span class="doc-name">{{ doc }}</span>
+                        <button class="btn-delete-doc" @click="deleteDocument(doc)" title="删除此文档">×</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload History -->
+            <div class="uploaded-list" v-if="uploadHistory.length > 0">
+                <h4>上传记录</h4>
+                <div class="uploaded-item" v-for="(item, index) in uploadHistory" :key="index">
+                    <span class="status-dot" :class="item.success ? 'success' : 'skip'"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.name }}</span>
+                    <span style="color:#999;font-size:12px;">{{ item.result }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            files: [],
+            isDragover: false,
+            uploading: false,
+            cancelRequested: false,
+            abortController: null,
+            uploadProcessed: 0,
+            uploadTotal: 0,
+            statusMsg: '',
+            statusType: 'info',
+            uploadHistory: [],
+            documents: [],
+            loadingDocs: false,
+            resettingImages: false,
+            clearingAll: false,
+            admin: { username: '', avatar: '' },
+            showAdminDropdown: false,
+        };
+    },
+    mounted() {
+        this.checkAuth();
+        document.addEventListener('click', this.closeAdminDropdown);
+    },
+    beforeUnmount() {
+        document.removeEventListener('click', this.closeAdminDropdown);
+    },
+    methods: {
+        async checkAuth() {
+            if (!sessionStorage.getItem('kb_auth')) {
+                window.location.href = '/kb_login.html';
+                return;
+            }
+            try {
+                const res = await fetch('/api/kb/status');
+                const data = await res.json();
+                if (data.success && data.logged_in) {
+                    this.admin = data.admin;
+                    this.loadDocuments();
+                } else {
+                    sessionStorage.removeItem('kb_auth');
+                    window.location.href = '/kb_login.html';
+                }
+            } catch (e) {
+                window.location.href = '/kb_login.html';
+            }
+        },
+        toggleAdminDropdown() {
+            this.showAdminDropdown = !this.showAdminDropdown;
+        },
+        closeAdminDropdown(e) {
+            if (!e.target.closest('.admin-area')) {
+                this.showAdminDropdown = false;
+            }
+        },
+        goToAdminCenter() {
+            this.showAdminDropdown = false;
+            window.location.href = '/admin_center.html';
+        },
+        async handleLogout() {
+            this.showAdminDropdown = false;
+            sessionStorage.removeItem('kb_auth');
+            try {
+                await fetch('/api/kb/logout', { method: 'POST' });
+            } catch (e) {}
+            window.location.href = '/kb_login.html';
+        },
+        async loadDocuments() {
+            this.loadingDocs = true;
+            try {
+                const res = await fetch('/api/documents');
+                const data = await res.json();
+                if (data.success) {
+                    this.documents = data.documents;
+                }
+            } catch (err) {
+                console.error('加载文档列表失败', err);
+            } finally {
+                this.loadingDocs = false;
+            }
+        },
+        async deleteDocument(filename) {
+            if (!confirm(`确认删除知识库文档 "${filename}"？此操作不可恢复。`)) return;
+            try {
+                const res = await fetch('/api/documents/' + encodeURIComponent(filename), { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    this.documents = this.documents.filter(d => d !== filename);
+                    this.statusMsg = `已删除: ${filename}`;
+                    this.statusType = 'success';
+                } else {
+                    this.statusMsg = data.message || '删除失败';
+                    this.statusType = 'error';
+                }
+            } catch (err) {
+                this.statusMsg = '删除请求失败';
+                this.statusType = 'error';
+            }
+            setTimeout(() => { this.statusMsg = ''; }, 4000);
+        },
+        triggerFileInput() {
+            this.$refs.fileInput.click();
+        },
+        handleFileSelect(e) {
+            this.addFiles(e.target.files);
+        },
+        handleDrop(e) {
+            this.isDragover = false;
+            this.addFiles(e.dataTransfer.files);
+        },
+        addFiles(fileList) {
+            const allowed = ['txt', 'pdf', 'docx', 'xlsx', 'pptx', 'md'];
+            for (const file of fileList) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (allowed.includes(ext)) {
+                    const exists = this.files.some(f => f.name === file.name && f.size === file.size);
+                    if (!exists) {
+                        this.files.push({
+                            name: file.name,
+                            size: file.size,
+                            ext: ext,
+                            raw: file,
+                        });
+                    }
+                }
+            }
+        },
+        removeFile(index) {
+            this.files.splice(index, 1);
+        },
+        formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        },
+        async uploadFiles() {
+            if (this.files.length === 0) return;
+            this.uploading = true;
+            this.cancelRequested = false;
+            this.uploadTotal = this.files.length;
+            this.uploadProcessed = 0;
+            this.statusMsg = '';
+            this.statusType = 'info';
+
+            const filesToUpload = [...this.files];
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const file of filesToUpload) {
+                if (this.cancelRequested) break;
+
+                this.abortController = new AbortController();
+
+                const formData = new FormData();
+                formData.append('file', file.raw);
+
+                try {
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                        signal: this.abortController.signal,
+                    });
+                    const data = await res.json();
+                    this.uploadHistory.push({
+                        name: file.name,
+                        success: data.success,
+                        result: data.message,
+                    });
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        // 检测维度不匹配错误，提示重置图片集合
+                        if (data.message && data.message.toLowerCase().includes('dimension')) {
+                            this.statusMsg = '检测到图片向量维度不匹配，请在下方"重置图片集合"后重新上传该文件';
+                            this.statusType = 'error';
+                        }
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        break;  // 用户手动停止，直接退出循环
+                    }
+                    this.uploadHistory.push({
+                        name: file.name,
+                        success: false,
+                        result: '网络错误',
+                    });
+                    failCount++;
+                }
+
+                this.uploadProcessed++;
+                await this._refreshDocuments();
+            }
+
+            if (this.cancelRequested) {
+                this.statusMsg = `上传已停止 (已完成 ${successCount} 个, 失败 ${failCount} 个)`;
+                this.statusType = 'info';
+            } else if (failCount === 0) {
+                this.statusMsg = `全部上传成功 (${successCount} 个文件)`;
+                this.statusType = 'success';
+            } else if (successCount > 0) {
+                this.statusMsg = `上传完成: 成功 ${successCount} 个, 失败 ${failCount} 个`;
+                this.statusType = 'info';
+            } else {
+                this.statusMsg = '全部上传失败，请检查网络连接';
+                this.statusType = 'error';
+            }
+
+            this.files = [];
+            this.uploading = false;
+            this.cancelRequested = false;
+            this.abortController = null;
+
+            setTimeout(() => { this.statusMsg = ''; }, 5000);
+        },
+        cancelUpload() {
+            this.cancelRequested = true;
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+        },
+        async _refreshDocuments() {
+            try {
+                const res = await fetch('/api/documents');
+                const data = await res.json();
+                if (data.success) {
+                    this.documents = data.documents;
+                }
+            } catch (err) {
+                // 静默失败，不影响上传流程
+            }
+        },
+        async clearAllDocuments() {
+            if (this.documents.length === 0) return;
+            if (!confirm(`确认清空全部 ${this.documents.length} 个知识库文档？此操作不可恢复！`)) return;
+            this.clearingAll = true;
+            try {
+                const res = await fetch('/api/documents/clear_all', { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    this.documents = [];
+                    this.statusMsg = '已清空所有知识库文档';
+                    this.statusType = 'success';
+                } else {
+                    this.statusMsg = data.message || '清空失败';
+                    this.statusType = 'error';
+                }
+            } catch (err) {
+                this.statusMsg = '清空请求失败';
+                this.statusType = 'error';
+            }
+            this.clearingAll = false;
+            setTimeout(() => { this.statusMsg = ''; }, 5000);
+        },
+        async resetImageCollection() {
+            if (!confirm('重置图片向量集合将删除所有已存储的图片向量数据，之后需要重新上传含图片的 PDF。确认继续？')) return;
+            this.resettingImages = true;
+            try {
+                const res = await fetch('/api/images/reset', { method: 'POST' });
+                const data = await res.json();
+                this.statusMsg = data.message || (data.success ? '重置成功' : '重置失败');
+                this.statusType = data.success ? 'success' : 'error';
+            } catch (err) {
+                this.statusMsg = '重置请求失败';
+                this.statusType = 'error';
+            }
+            this.resettingImages = false;
+            setTimeout(() => { this.statusMsg = ''; }, 5000);
+        },
+    },
+}).mount('#app');
+</script>
+</body>
+</html>

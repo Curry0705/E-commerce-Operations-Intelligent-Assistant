@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员中心</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        if (typeof Vue === 'undefined') {
+            document.write('<script src="https://unpkg.zhimg.com/vue@3/dist/vue.global.prod.js"><\/script>');
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #4f8c6c; --primary-light: #e8f5e9; --primary-dark: #3d6b52;
+            --bg: #f5f7fa; --card-bg: #fff; --text: #2c3e50; --text-secondary: #7f8c9b;
+            --border: #e8ecf1; --success: #52c41a; --error: #ff4d4f; --warning: #faad14;
+            --radius: 16px; --radius-sm: 10px; --shadow: 0 2px 16px rgba(0,0,0,0.06);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f1 30%, #f5f7fa 70%, #e3f2fd 100%);
+            min-height: 100vh; padding: 24px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        .back-btn-fixed {
+            position: fixed; top: 16px; right: 24px; z-index: 100;
+            padding: 8px 18px; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--card-bg); color: var(--text); font-size: 13px; font-weight: 500;
+            cursor: pointer; text-decoration: none; transition: var(--transition);
+            display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow);
+        }
+        .back-btn-fixed:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+        /* Profile Card */
+        .profile-card {
+            background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 32px; margin-bottom: 24px; border: 1px solid var(--border);
+            display: flex; gap: 28px; align-items: center;
+        }
+        .profile-avatar {
+            width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+            background: var(--primary-light); display: flex; align-items: center; justify-content: center;
+            overflow: hidden; border: 3px solid var(--primary); cursor: pointer; position: relative;
+            transition: var(--transition);
+        }
+        .profile-avatar:hover { opacity: 0.85; }
+        .profile-avatar:hover::after {
+            content: '+'; position: absolute; inset: 0;
+            background: rgba(0,0,0,0.4); color: #fff; display: flex;
+            align-items: center; justify-content: center; font-size: 36px; font-weight: 300;
+            border-radius: 50%;
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar svg { width: 40px; height: 40px; color: var(--primary); }
+        .profile-info { flex: 1; min-width: 0; }
+        .profile-info h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+        .profile-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .profile-field { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+        .profile-field svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .profile-field .label { color: var(--text-secondary); }
+        .profile-field .value { color: var(--text); font-weight: 500; }
+        .profile-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+        .profile-tag { font-size: 11px; padding: 4px 12px; border-radius: 20px; background: var(--primary-light); color: var(--primary); font-weight: 500; }
+        .profile-tags-empty {
+            margin-top: 12px; display: flex; align-items: center; gap: 6px;
+            font-size: 13px; color: #b0b8c1; font-weight: 500;
+        }
+        .profile-tags-empty svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .profile-edit-btn {
+            padding: 8px 18px; border: 1px solid var(--primary); border-radius: 8px;
+            background: var(--card-bg); color: var(--primary); font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: var(--transition); white-space: nowrap;
+        }
+        .profile-edit-btn:hover { background: var(--primary-light); }
+
+        /* Edit Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal {
+            background: var(--card-bg); border-radius: var(--radius); padding: 32px;
+            max-width: 440px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        }
+        .modal h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+        .modal .form-group { margin-bottom: 16px; }
+        .modal .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
+        .modal .form-group input, .modal .form-group textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 14px; color: var(--text); outline: none; resize: vertical;
+        }
+        .modal .form-group input:focus, .modal .form-group textarea:focus { border-color: var(--primary); }
+        .modal .form-group textarea { min-height: 60px; font-family: inherit; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .btn-save { padding: 9px 28px; background: linear-gradient(135deg, #4f8c6c 0%, #43a047 100%); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-cancel { padding: 9px 28px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-secondary); font-size: 14px; cursor: pointer; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 28px 24px; border: 1px solid var(--border); display: flex; align-items: center; gap: 18px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+        .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .kpi-icon {
+            width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .kpi-icon.docs   { background: #e3f2fd; }
+        .kpi-icon.today  { background: #fff3e0; }
+        .kpi-icon.admins { background: #e8f5e9; }
+        .kpi-icon svg { width: 26px; height: 26px; }
+        .kpi-icon.docs   svg { color: #1976d2; }
+        .kpi-icon.today  svg { color: #f57c00; }
+        .kpi-icon.admins svg { color: #388e3c; }
+        .kpi-info { flex: 1; }
+        .kpi-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
+        .kpi-value { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1.1; }
+
+        /* Upload Records Table */
+        .records-card {
+            background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 28px; border: 1px solid var(--border);
+        }
+        .records-card h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+        .table-scroll { max-height: 520px; overflow-y: auto; border-radius: 8px; }
+        .table-scroll table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table-scroll thead { position: sticky; top: 0; z-index: 1; }
+        .table-scroll th {
+            text-align: left; padding: 10px 14px; color: var(--text-secondary); font-weight: 500;
+            border-bottom: 2px solid var(--border); white-space: nowrap;
+            background: var(--card-bg);
+        }
+        .table-scroll td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+        .table-scroll tr:hover td { background: #fafbfc; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-badge.success { background: #f0fff0; color: #389e0d; }
+        .status-badge.failed  { background: #fff2f0; color: #cf1322; }
+        .file-type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .file-type-badge.pdf  { background: #fce4ec; color: #d32f2f; }
+        .file-type-badge.md   { background: #f3e5f5; color: #7b1fa2; }
+        .file-type-badge.docx { background: #e3f2fd; color: #1976d2; }
+        .file-type-badge.xlsx { background: #e8f5e9; color: #388e3c; }
+        .file-type-badge.pptx { background: #fff3e0; color: #f57c00; }
+        .file-type-badge.txt  { background: #f5f5f5; color: #616161; }
+        .no-data { text-align: center; color: var(--text-secondary); padding: 28px 0; font-size: 13px; }
+
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .profile-card { flex-direction: column; text-align: center; }
+            .profile-fields { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <a href="/" class="back-btn-fixed">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+            返回更新服务
+        </a>
+
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-avatar" @click="triggerAvatarUpload" title="点击更换头像">
+                <img v-if="profile.avatar" :src="profile.avatar" alt="">
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <input type="file" ref="avatarInput" accept="image/*" style="display:none" @change="handleAvatarChange">
+            <div class="profile-info">
+                <h2>{{ profile.username }}</h2>
+                <div class="profile-fields">
+                    <div class="profile-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span class="label">注册时间:</span>
+                        <span class="value">{{ formatDate(profile.created_at) }}</span>
+                    </div>
+                    <div class="profile-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        <span class="label">邮箱:</span>
+                        <span class="value">{{ profile.email || '未填写' }}</span>
+                    </div>
+                    <div class="profile-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <span class="label">手机:</span>
+                        <span class="value">{{ profile.phone || '未填写' }}</span>
+                    </div>
+                    <div class="profile-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                        <span class="label">用户标签:</span>
+                        <span class="value" v-if="tagList.length > 0">
+                            <span class="profile-tag" v-for="tag in tagList" :key="tag" style="margin-right:4px;">{{ tag }}</span>
+                        </span>
+                        <span class="value" v-else style="color:#b0b8c1;">请输入用户标签</span>
+                    </div>
+                </div>
+            </div>
+            <button class="profile-edit-btn" @click="openEdit">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                编辑资料
+            </button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon docs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h8v2H8v-2zm0 4h8v2H8v-2zm0-8h3v2H8V9z"/></svg>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">已入库文档总数</div>
+                    <div class="kpi-value">{{ stats.total }}</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon today">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="8 14 11 17 16 12"/></svg>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">今日上传文档数</div>
+                    <div class="kpi-value">{{ stats.today }}</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon admins">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">管理员总数</div>
+                    <div class="kpi-value">{{ stats.admin_count }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Records -->
+        <div class="records-card">
+            <h4>上传记录</h4>
+            <div class="table-scroll" v-if="records.length > 0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>文件名</th>
+                            <th>文件类型</th>
+                            <th>上传时间</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="r in records" :key="r.id">
+                            <td>{{ r.file_name }}</td>
+                            <td><span class="file-type-badge" :class="r.file_type">{{ r.file_type }}</span></td>
+                            <td>{{ formatDate(r.upload_time) }}</td>
+                            <td><span class="status-badge" :class="r.upload_status">{{ r.upload_status === 'success' ? '上传成功' : '上传失败' }}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="no-data" v-else>暂无上传记录</div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal = false">
+        <div class="modal">
+            <h3>编辑个人资料</h3>
+            <div class="form-group">
+                <label>手机号</label>
+                <input type="text" v-model="editForm.phone" placeholder="请输入手机号">
+            </div>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" v-model="editForm.email" placeholder="请输入邮箱">
+            </div>
+            <div class="form-group">
+                <label>标签（空格分隔）</label>
+                <textarea v-model="editForm.tags" placeholder="例如：运营专家 抖音电商 数据分析"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" @click="showEditModal = false">取消</button>
+                <button class="btn-save" @click="saveProfile">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+    data() {
+        return {
+            profile: { username: '', phone: '', email: '', avatar: '', tags: '', created_at: '' },
+            stats: { total: 0, today: 0, by_type: {}, admin_count: 0 },
+            records: [],
+            showEditModal: false,
+            editForm: { phone: '', email: '', tags: '' },
+            refreshTimer: null,
+        };
+    },
+    computed: {
+        tagList() { return (this.profile.tags || '').split(/\s+/).map(t => t.trim()).filter(Boolean); },
+    },
+    mounted() {
+        if (!sessionStorage.getItem('kb_auth')) {
+            window.location.href = '/kb_login.html';
+            return;
+        }
+        this.loadAll();
+        this.refreshTimer = setInterval(() => this.loadStatsAndRecords(), 5000);
+    },
+    beforeUnmount() {
+        if (this.refreshTimer) clearInterval(this.refreshTimer);
+    },
+    methods: {
+        async loadAll() {
+            await Promise.all([this.loadProfile(), this.loadStatsAndRecords()]);
+        },
+        async loadProfile() {
+            try {
+                const res = await fetch('/api/admin/profile');
+                const data = await res.json();
+                if (data.success) this.profile = data.admin;
+            } catch (e) { console.error(e); }
+        },
+        async loadStatsAndRecords() {
+            try {
+                const [statsRes, recordsRes] = await Promise.all([
+                    fetch('/api/admin/stats'),
+                    fetch('/api/admin/upload-records'),
+                ]);
+                const s = await statsRes.json();
+                if (s.success) {
+                    this.stats = s.stats;
+                }
+                const r = await recordsRes.json();
+                if (r.success) this.records = r.records;
+            } catch (e) { console.error(e); }
+        },
+        triggerAvatarUpload() {
+            this.$refs.avatarInput.click();
+        },
+        handleAvatarChange(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const res = await fetch('/api/admin/profile', {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ avatar: reader.result }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.profile.avatar = reader.result;
+                    }
+                } catch (err) { console.error(err); }
+            };
+            reader.readAsDataURL(file);
+        },
+        openEdit() {
+            this.editForm = {
+                phone: this.profile.phone || '',
+                email: this.profile.email || '',
+                tags: this.profile.tags || '',
+            };
+            this.showEditModal = true;
+        },
+        async saveProfile() {
+            try {
+                const res = await fetch('/api/admin/profile', {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.editForm),
+                });
+                const data = await res.json();
+                if (data.success) { await this.loadProfile(); this.showEditModal = false; }
+            } catch (e) { console.error(e); }
+        },
+        formatDate(d) {
+            if (!d) return '-';
+            const t = new Date(d); if (isNaN(t.getTime())) return d;
+            const pad = n => String(n).padStart(2, '0');
+            return `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}`;
+        },
+    },
+}).mount('#app');
+</script>
+</body>
+</html>

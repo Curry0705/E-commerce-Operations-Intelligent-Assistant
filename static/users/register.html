@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 电商运营智能助手</title>
+    <style>
+        :root {
+            --primary: #4f8c6c; --primary-light: #e8f5e9;
+            --bg: #f5f7fa; --card-bg: #fff; --text: #2c3e50; --text-secondary: #7f8c9b;
+            --border: #e8ecf1; --error: #ff4d4f; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f1 30%, #f5f7fa 70%, #e3f2fd 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .container { width: 100%; max-width: 420px; padding: 24px; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+        .header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+        .card {
+            background: var(--card-bg); border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            padding: 32px 28px; border: 1px solid var(--border);
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+        .form-group input {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: var(--primary); }
+        .btn-primary {
+            width: 100%; padding: 12px 0; background: linear-gradient(135deg, #4f8c6c 0%, #43a047 100%);
+            color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(79,140,108,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .alert { margin-bottom: 16px; padding: 10px 14px; border-radius: 8px; font-size: 13px; text-align: center; }
+        .alert-error { background: #fff2f0; color: #cf1322; border: 1px solid #ffccc7; }
+        .alert-success { background: #f0fff0; color: #389e0d; border: 1px solid #b7eb8f; }
+        .footer-link { text-align: center; margin-top: 18px; }
+        .footer-link a { font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 500; }
+        .footer-link a:hover { text-decoration: underline; }
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>注册新账号</h1>
+        <p>加入电商运营智能助手</p>
+    </div>
+    <div class="card">
+        <div id="alertBox"></div>
+        <div class="form-group">
+            <label>用户名 *</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label>密码 *</label>
+            <input type="password" id="password" placeholder="至少 6 位">
+        </div>
+        <div class="form-group">
+            <label>确认密码 *</label>
+            <input type="password" id="confirmPassword" placeholder="再次输入密码">
+        </div>
+        <div class="form-group">
+            <label>电话号码</label>
+            <input type="text" id="phone" placeholder="选填">
+        </div>
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="email" placeholder="选填">
+        </div>
+        <button class="btn-primary" id="regBtn" onclick="handleRegister()">
+            <span id="btnText">注 册</span>
+        </button>
+        <div class="footer-link">
+            <a href="/login.html">已有账号？去登录</a>
+        </div>
+    </div>
+</div>
+<script>
+async function handleRegister() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const alertBox = document.getElementById('alertBox');
+    const btn = document.getElementById('regBtn');
+    const btnText = document.getElementById('btnText');
+
+    alertBox.className = '';
+    alertBox.textContent = '';
+
+    if (!username || !password || !confirmPassword) {
+        alertBox.className = 'alert alert-error'; alertBox.textContent = '请填写必填字段'; return;
+    }
+    if (password !== confirmPassword) {
+        alertBox.className = 'alert alert-error'; alertBox.textContent = '两次密码输入不一致'; return;
+    }
+    if (password.length < 6) {
+        alertBox.className = 'alert alert-error'; alertBox.textContent = '密码长度不能少于 6 位'; return;
+    }
+
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span> 注册中...';
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, confirm_password: confirmPassword, phone, email }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.href = '/login.html?msg=' + encodeURIComponent('注册成功，请登录');
+        } else {
+            alertBox.className = 'alert alert-error'; alertBox.textContent = data.message || '注册失败';
+        }
+    } catch (err) {
+        alertBox.className = 'alert alert-error'; alertBox.textContent = '网络错误，请重试';
+    }
+
+    btn.disabled = false;
+    btnText.textContent = '注 册';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人信息 - 电商运营智能助手</title>
+    <style>
+        :root {
+            --primary: #4f8c6c; --primary-light: #e8f5e9;
+            --bg: #f5f7fa; --card-bg: #fff; --text: #2c3e50; --text-secondary: #7f8c9b;
+            --border: #e8ecf1; --error: #ff4d4f; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f1 30%, #f5f7fa 70%, #e3f2fd 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .container { width: 100%; max-width: 480px; padding: 24px; }
+        .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .top-bar a { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 500; }
+        .top-bar a:hover { text-decoration: underline; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+        .card {
+            background: var(--card-bg); border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            padding: 32px 28px; border: 1px solid var(--border);
+        }
+        .avatar-section { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .avatar-img {
+            width: 64px; height: 64px; border-radius: 50%; background: var(--primary-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 700; color: var(--primary); flex-shrink: 0;
+            overflow: hidden;
+        }
+        .avatar-img img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-section .info h3 { font-size: 16px; font-weight: 600; color: var(--text); }
+        .avatar-section .info p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .avatar-section .upload-label { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 500; }
+        .avatar-section .upload-label:hover { text-decoration: underline; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+        .form-group input:read-only, .form-group textarea:read-only { background: #f5f7fa; color: #999; cursor: not-allowed; }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .btn-primary {
+            width: 100%; padding: 12px 0; background: linear-gradient(135deg, #4f8c6c 0%, #43a047 100%);
+            color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(79,140,108,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .alert { margin-top: 16px; padding: 10px 14px; border-radius: 8px; font-size: 13px; text-align: center; }
+        .alert-error { background: #fff2f0; color: #cf1322; border: 1px solid #ffccc7; }
+        .alert-success { background: #f0fff0; color: #389e0d; border: 1px solid #b7eb8f; }
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="top-bar">
+        <a href="/">← 返回对话</a>
+    </div>
+    <div class="header">
+        <h1>个人信息</h1>
+    </div>
+    <div class="card">
+        <div class="avatar-section">
+            <div class="avatar-img" id="avatarDisplay">
+                <span id="avatarText"></span>
+                <img id="avatarImg" style="display:none;">
+            </div>
+            <div class="info">
+                <h3 id="displayName">---</h3>
+                <label class="upload-label">
+                    更换头像
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="username" readonly>
+        </div>
+        <div class="form-group">
+            <label>电话号码</label>
+            <input type="text" id="phone" placeholder="请输入电话号码">
+        </div>
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="email" placeholder="请输入邮箱">
+        </div>
+        <div class="form-group">
+            <label>个性标签</label>
+            <textarea id="tags" placeholder="用逗号分隔多个标签，如：数据分析,直播运营"></textarea>
+        </div>
+        <button class="btn-primary" id="saveBtn" onclick="handleSave()">
+            <span id="btnText">保存修改</span>
+        </button>
+        <div id="alertBox" class="alert" style="display:none;"></div>
+    </div>
+</div>
+<script>
+let currentAvatar = '';
+
+if (!sessionStorage.getItem('qa_auth')) {
+    window.location.href = '/login.html';
+}
+
+async function loadUserInfo() {
+    try {
+        const res = await fetch('/api/auth/user-info');
+        if (!res.ok) { window.location.href = '/login.html'; return; }
+        const data = await res.json();
+        if (!data.success) { window.location.href = '/login.html'; return; }
+        const u = data.user;
+        document.getElementById('username').value = u.username;
+        document.getElementById('phone').value = u.phone || '';
+        document.getElementById('email').value = u.email || '';
+        document.getElementById('tags').value = u.tags || '';
+        document.getElementById('displayName').textContent = u.username || '---';
+        currentAvatar = u.avatar || '';
+        updateAvatarDisplay();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function updateAvatarDisplay() {
+    const img = document.getElementById('avatarImg');
+    const text = document.getElementById('avatarText');
+    if (currentAvatar && currentAvatar.startsWith('data:image')) {
+        img.src = currentAvatar;
+        img.style.display = '';
+        text.style.display = 'none';
+    } else if (currentAvatar) {
+        img.src = currentAvatar;
+        img.style.display = '';
+        text.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        text.style.display = '';
+        const name = document.getElementById('username').value;
+        text.textContent = name ? name.charAt(0).toUpperCase() : '?';
+    }
+}
+
+function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = function() {
+        // 缩放到 200x200 以内，保持比例
+        const MAX = 200;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+        else       { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        currentAvatar = canvas.toDataURL('image/jpeg', 0.7);
+        updateAvatarDisplay();
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+async function handleSave() {
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const tags = document.getElementById('tags').value.trim();
+    const alertBox = document.getElementById('alertBox');
+    const btn = document.getElementById('saveBtn');
+    const btnText = document.getElementById('btnText');
+
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span> 保存中...';
+
+    try {
+        const res = await fetch('/api/auth/user-info', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, email, tags, avatar: currentAvatar }),
+        });
+        const data = await res.json();
+        alertBox.style.display = '';
+        if (data.success) {
+            alertBox.className = 'alert alert-success';
+            alertBox.textContent = '个人信息已更新';
+        } else {
+            alertBox.className = 'alert alert-error';
+            alertBox.textContent = data.message || '保存失败';
+        }
+    } catch (err) {
+        alertBox.style.display = '';
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = '网络错误，请重试';
+    }
+
+    btn.disabled = false;
+    btnText.textContent = '保存修改';
+    setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+}
+
+loadUserInfo();
+</script>
+</body>
+</html>

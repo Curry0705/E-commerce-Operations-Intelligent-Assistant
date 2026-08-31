@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员中心</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+    <style>
+        :root {
+            --primary: #4f8c6c; --primary-dark: #3d6b52; --primary-light: #e8f5e9;
+            --bg: #f5f7fa; --card-bg: #fff; --text: #2c3e50; --text-secondary: #7f8c9b;
+            --border: #e8ecf1; --error: #ff4d4f; --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f1 30%, #f5f7fa 70%, #e3f2fd 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .container { width: 100%; max-width: 400px; padding: 24px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .logo-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #4f8c6c 0%, #66bb6a 100%); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(79,140,108,0.25); }
+        .logo-icon svg { width: 28px; height: 28px; fill: white; }
+        .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+        .header p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; }
+        .card { background: var(--card-bg); border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); padding: 36px 32px; border: 1px solid var(--border); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s; }
+        .form-group input:focus { border-color: var(--primary); }
+        .btn-primary { width: 100%; padding: 12px 0; background: linear-gradient(135deg, #4f8c6c 0%, #43a047 100%); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(79,140,108,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,140,108,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .links { display: flex; justify-content: center; margin-top: 24px; }
+        .links a { font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 500; }
+        .links a:hover { text-decoration: underline; }
+        .alert { margin-top: 16px; padding: 10px 14px; border-radius: 8px; font-size: 13px; text-align: center; animation: fadeIn 0.3s ease; }
+        .alert-error { background: #fff2f0; color: #cf1322; border: 1px solid #ffccc7; }
+        .alert-success { background: #f0fff0; color: #389e0d; border: 1px solid #b7eb8f; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h8v2H8v-2zm0 4h8v2H8v-2zm0-8h3v2H8V9z"/></svg>
+        </div>
+        <h1>知识库管理</h1>
+        <p>注册管理员账号</p>
+    </div>
+    <div class="card">
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" v-model="username" placeholder="请输入管理员用户名">
+        </div>
+        <div class="form-group">
+            <label>手机号</label>
+            <input type="text" v-model="phone" placeholder="请输入手机号（选填）">
+        </div>
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" v-model="email" placeholder="请输入邮箱（选填）">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" v-model="password" placeholder="请输入密码（不少于6位）">
+        </div>
+        <div class="form-group">
+            <label>确认密码</label>
+            <input type="password" v-model="confirm_password" placeholder="请再次输入密码">
+        </div>
+        <button class="btn-primary" @click="register" :disabled="loading">
+            <span v-if="loading"><span class="spinner"></span>注册中...</span>
+            <span v-else>注 册</span>
+        </button>
+        <div v-if="msg" :class="['alert', msgType === 'error' ? 'alert-error' : 'alert-success']">{{ msg }}</div>
+        <div class="links">
+            <a href="/kb_login.html">已有账号？去登录</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script>
+const { createApp } = Vue;
+createApp({
+    data() { return { username: '', password: '', confirm_password: '', phone: '', email: '', loading: false, msg: '', msgType: 'error' }; },
+    methods: {
+        async register() {
+            if (!this.username || !this.password) { this.msg = '用户名和密码不能为空'; this.msgType = 'error'; return; }
+            if (this.password !== this.confirm_password) { this.msg = '两次密码输入不一致'; this.msgType = 'error'; return; }
+            if (this.password.length < 6) { this.msg = '密码长度不能少于 6 位'; this.msgType = 'error'; return; }
+            this.loading = true; this.msg = '';
+            try {
+                const res = await fetch('/api/kb/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: this.username, password: this.password, confirm_password: this.confirm_password, phone: this.phone, email: this.email }) });
+                const data = await res.json();
+                if (data.success) { this.msg = '注册成功，正在跳转...'; this.msgType = 'success'; setTimeout(() => { window.location.href = '/kb_login.html'; }, 800); }
+                else { this.msg = data.message || '注册失败'; this.msgType = 'error'; }
+            } catch (e) { this.msg = '网络错误'; this.msgType = 'error'; }
+            finally { this.loading = false; }
+        }
+    }
+}).mount('.container');
+</script>
+</body>
+</html>
