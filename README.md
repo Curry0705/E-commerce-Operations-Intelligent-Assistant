@@ -337,7 +337,7 @@ RRF_score(d) = Σ 1 / (k + rank_i(d))
 | 文档类型 | 分块策略 | 技术实现 | 优势 |
 |----------|----------|----------|------|
 | **Markdown / DOCX** | 标题层级分割 | `MarkdownHeaderTextSplitter` 按 `#`、`##`、`###` 分割 | 保留文档结构，语义完整性强 |
-| **PDF** | 两阶段分块 | 先 `RecursiveCharacterTextSplitter`（2000 字符，200 重叠）粗切，再 `SemanticChunker` 细分 | 兼顾速度与质量 |
+| **PDF** | 递归字符切割 | RecursiveCharacterTextSplitter（600 字符，100 重叠）切分 | 兼顾速度与质量 |
 | **PPTX** | 幻灯片边界分割 | 按 `[幻灯片 N]` 标记分割 | 每页内容自然成块 |
 | **XLSX** | 工作表边界分割 | 按 `[Sheet: ...]` 标记分割 | 保持表格数据完整性 |
 | **TXT / 其他** | 语义分块 | 直接使用 `SemanticChunker` | 自动识别语义边界 |
