@@ -186,7 +186,7 @@ RAG（Retrieval-Augmented Generation）是一种将信息检索与文本生成�
 | 文档类型 | 分块策略 | 原理 |
 |----------|----------|------|
 | Markdown/DOCX | 标题层级分割 | 按 `#`、`##`、`###` 标题自然分割，保留文档结构 |
-| PDF | 语义分块 | 先粗切（2000字符），再用 SemanticChunker 按语义相似度细分 |
+| PDF | 递归字符分块 | 利用 RecursiveCharacterTextSplitter 递归切分 |
 | PPTX | 幻灯片分割 | 按幻灯片页边界自然分割 |
 | XLSX | 工作表分割 | 按 Sheet 边界分割 |
 | 通用 | 递归字符分割 | 作为兜底策略，超长块（>2000字符）强制切分 |
